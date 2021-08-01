@@ -1,5 +1,5 @@
 {
-  "name": "Export to KITTI",
+  "name": "Export to KITTI 3D",
   "type": "app",
   "categories": [
     "Import"
