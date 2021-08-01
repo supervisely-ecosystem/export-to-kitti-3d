@@ -1,10 +1,10 @@
 {
-  "name": "Import KITTI",
+  "name": "Export to KITTI",
   "type": "app",
   "categories": [
     "Import"
   ],
-  "description": "Converts KITTI format to Supervisely",
+  "description": "Converts Supervisely Pointcloud format to KITTI 3D",
   "docker_image": "supervisely/base-py-sdk:6.1.93",
   "main_script": "src/main.py",
   "task_location": "workspace_tasks",
