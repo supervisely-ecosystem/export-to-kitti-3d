@@ -10,6 +10,6 @@
   "task_location": "workspace_tasks",
   "isolate": true,
   "headless": true,
-  "icon": "https://i.imgur.com/pUqLuNq.png",
-  "icon_background": "#FFFFFF"
+  "icon": "https://i.imgur.com/pp51Kav.png",
+  "icon_cover": true
 }
