@@ -7,7 +7,7 @@ import supervisely_lib as sly
 from open3d._ml3d.datasets.utils import BEVBox3D
 
 
-def sort_kitty():
+def sort_kitti():
     path_to_meta = os.path.join(g.sly_base_dir, "meta.json")
     meta_json = sly.json.load_json_file(path_to_meta)
     meta = sly.ProjectMeta.from_json(meta_json)
@@ -164,7 +164,7 @@ def gen_calib_from_img_meta(img_meta, path):
 
 
 def convert(project_dir, kitti_dataset_path, exclude_items=[]):
-    sort_kitty()
+    sort_kitti()
     project_fs = sly.PointcloudProject.read_single(project_dir)
     for dataset_fs in project_fs:
         if dataset_fs.name == "training":
