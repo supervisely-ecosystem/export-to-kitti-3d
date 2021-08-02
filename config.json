@@ -12,4 +12,8 @@
   "headless": true,
   "icon": "https://i.imgur.com/pp51Kav.png",
   "icon_cover": true
+  "context_menu": {
+    "target": ["point_cloud_project"],
+    "context_root": "Download as"
+  }
 }
