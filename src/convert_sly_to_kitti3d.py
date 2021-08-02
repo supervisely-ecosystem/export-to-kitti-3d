@@ -1,13 +1,10 @@
 import os
 import shutil
-
-import globals as g
-
 import numpy as np
+import globals as g
 import open3d as o3d
-from open3d._ml3d.datasets.utils import BEVBox3D
-
 import supervisely_lib as sly
+from open3d._ml3d.datasets.utils import BEVBox3D
 
 
 def sort_kitty():
@@ -167,8 +164,8 @@ def gen_calib_from_img_meta(img_meta, path):
 
 
 def convert(project_dir, kitti_dataset_path, exclude_items=[]):
-    project_fs = sly.PointcloudProject.read_single(project_dir)
     sort_kitty()
+    project_fs = sly.PointcloudProject.read_single(project_dir)
     for dataset_fs in project_fs:
         if dataset_fs.name == "training":
             bin_dir, image_dir, label_dir, calib_dir = kitti_paths(kitti_dataset_path, "training")

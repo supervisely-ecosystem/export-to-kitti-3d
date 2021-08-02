@@ -1,6 +1,7 @@
 import os
 import supervisely_lib as sly
 
+
 my_app = sly.AppService()
 api: sly.Api = my_app.public_api
 

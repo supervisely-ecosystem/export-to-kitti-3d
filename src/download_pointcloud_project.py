@@ -1,8 +1,8 @@
 import os
 import shutil
-
 import supervisely_lib as sly
 from supervisely_lib.project.pointcloud_project import download_pointcloud_project
+
 
 def start(project_id, dest_dir):
     shutil.rmtree(dest_dir, ignore_errors=True)  # WARNING!
