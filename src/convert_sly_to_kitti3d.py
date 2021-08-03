@@ -13,8 +13,9 @@ def sort_kitti():
     meta = sly.ProjectMeta.from_json(meta_json)
 
     temp_dir = os.path.join(g.storage_dir, "temp_dir")
-    temp_train_dir = os.path.join(temp_dir, "training")
-    temp_test_dir = os.path.join(temp_dir, "testing")
+    temp_proj_dir = os.path.join(temp_dir, g.project_name)
+    temp_train_dir = os.path.join(temp_proj_dir, "training")
+    temp_test_dir = os.path.join(temp_proj_dir, "testing")
     temp_train_ann_dir = os.path.join(temp_train_dir, "ann")
     temp_test_ann_dir = os.path.join(temp_test_dir, "ann")
     temp_train_pcd_dir = os.path.join(temp_train_dir, "pointcloud")
@@ -23,8 +24,9 @@ def sort_kitti():
     temp_test_img_dir = os.path.join(temp_test_dir, "related_images")
 
     sly.fs.mkdir(temp_dir, remove_content_if_exists=True)
-    sly.fs.mkdir(temp_train_dir, remove_content_if_exists=True)
-    sly.fs.mkdir(temp_test_dir, remove_content_if_exists=True)
+    sly.fs.mkdir(temp_proj_dir)
+    sly.fs.mkdir(temp_train_dir)
+    sly.fs.mkdir(temp_test_dir)
 
     sly.fs.mkdir(temp_train_ann_dir)
     sly.fs.mkdir(temp_test_ann_dir)
@@ -47,23 +49,21 @@ def sort_kitti():
         img_paths = [os.path.join(img_dir, img_path) for img_path in os.listdir(img_dir) if
                      os.path.isdir(os.path.join(img_dir, img_path))]
 
-        for ann_path, pcd_path, img_path in zip(ann_paths, pcd_paths, img_paths):
+        for ann_path, pcd_path, img_path in zip(sorted(ann_paths), sorted(pcd_paths), sorted(img_paths)):
             ann_json = sly.json.load_json_file(ann_path)
             ann = sly.PointcloudAnnotation.from_json(ann_json, meta)
-            if len(ann.objects) > 0:
+            if len(ann.figures) > 0:
                 shutil.copy(ann_path, os.path.join(temp_train_ann_dir, os.path.basename(os.path.normpath(ann_path))))
                 shutil.copy(pcd_path, os.path.join(temp_train_pcd_dir, os.path.basename(os.path.normpath(pcd_path))))
-                shutil.copytree(img_path,
-                                os.path.join(temp_train_img_dir, os.path.basename(os.path.normpath(img_path))))
-            if len(ann.objects) == 0:
+                shutil.copytree(img_path, os.path.join(temp_train_img_dir, os.path.basename(os.path.normpath(img_path))))
+            if len(ann.figures) == 0:
                 shutil.copy(ann_path, os.path.join(temp_test_ann_dir, os.path.basename(os.path.normpath(ann_path))))
                 shutil.copy(pcd_path, os.path.join(temp_test_pcd_dir, os.path.basename(os.path.normpath(pcd_path))))
                 shutil.copytree(img_path, os.path.join(temp_test_img_dir, os.path.basename(os.path.normpath(img_path))))
 
     path_to_keyIdMap = os.path.join(g.sly_base_dir, "key_id_map.json")
-
-    shutil.copy(path_to_meta, os.path.join(temp_dir, "meta.json"))
-    shutil.copy(path_to_keyIdMap, os.path.join(temp_dir, "key_id_map.json"))
+    shutil.copy(path_to_meta, os.path.join(temp_proj_dir, "meta.json"))
+    shutil.copy(path_to_keyIdMap, os.path.join(temp_proj_dir, "key_id_map.json"))
 
     sly.fs.remove_dir(g.sly_base_dir)
     os.rename(temp_dir, g.sly_base_dir)

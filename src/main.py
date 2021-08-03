@@ -12,8 +12,8 @@ def export_kitti(api: sly.Api, task_id, context, state, app_logger):
     download_pointcloud_project.start(g.project_id, g.sly_base_dir)
     convert_sly_to_kitti3d.convert(g.sly_base_dir, g.kitti_base_dir, [])
 
-    archive_name = f"{g.task_id}_{g.project_id}_kitti_data.tar"
-    result_archive = os.path.join(g.storage_dir, f"{g.project_id}_kitti_data.tar")
+    archive_name = f"{g.project_id}_{g.project_name}.tar"
+    result_archive = os.path.join(g.storage_dir, archive_name)
     sly.fs.archive_directory(g.kitti_base_dir, result_archive)
     app_logger.info("Result directory is archived")
     remote_archive_path = "/Export KITTI 3D/{}/{}".format(task_id, archive_name)
