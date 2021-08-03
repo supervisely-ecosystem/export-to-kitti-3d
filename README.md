@@ -22,7 +22,7 @@
 ## Overview
 Converts [Supervisely](https://docs.supervise.ly/data-organization/00_ann_format_navi) format to [KITTY 3D](http://www.cvlibs.net/datasets/kitti/) and creates a downloadable link in the current `Workspace` -> `Tasks` page. Backward compatible with [`import-kitti-3d`](https://github.com/supervisely-ecosystem/import-kitti-3d) app.
 
-App checks annotations for the given supervisely pointcloud project scenes and sort all scenes within the project to `training` and `testing`. All project scenes with objects will be placed to `training`, and all scenes without objects will be placed to `testing`.
+App checks annotations for the given supervisely pointcloud project scenes and sort all scenes within the project to `training` and `testing`. All project scenes with figures will be placed to `training`, and all scenes without figures will be placed to `testing`.
 
 ## How To Run 
 **Step 1**: Add app to your team from [Ecosystem](https://ecosystem.supervise.ly/apps/export-to-kitti-3d) if it is not there.
