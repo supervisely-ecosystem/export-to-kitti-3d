@@ -1,11 +1,10 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/1l4dVSn.png"/>
+<img src="https://i.imgur.com/A8zjTub.png"/>
 
 # Export to KITTI 3D
 
 <p align="center">
   <a href="#Overview">Overview</a> •
-  <a href="#Preparation">Preparation</a> •
   <a href="#How-To-Run">How To Run</a> •
   <a href="#How-To-Use">How To Use</a>
 </p>
