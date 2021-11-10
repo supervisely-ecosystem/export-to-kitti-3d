@@ -205,9 +205,7 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
                 continue
 
             item_path, related_images_dir, ann_path = dataset_fs.get_item_paths(item_name)
-
             item_name_without_ext = item_name.split('.')[0]
-
             if dataset_fs.name == "training":
                 label_path = os.path.join(label_dir, item_name_without_ext + '.txt')
             calib_path = os.path.join(calib_dir, item_name_without_ext + '.txt')
@@ -218,8 +216,13 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
                 continue
 
             pcd_to_bin(item_path, bin_path)
-            related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
-            gen_calib_from_img_meta(img_meta, calib_path)
+            try:
+                related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
+                gen_calib_from_img_meta(img_meta, calib_path)
+            except Exception(f"Invalid photo context, {item_name} will be skipped") as e:
+                sly.logger.warn(e)
+                continue
+
             if dataset_fs.name == "training":
                 annotation_to_kitti_label(ann_path, calib_path=calib_path, kiiti_label_path=label_path,
                                           meta=project_fs.meta)
