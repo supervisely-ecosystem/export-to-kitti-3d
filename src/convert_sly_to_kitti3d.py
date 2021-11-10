@@ -4,6 +4,7 @@ import numpy as np
 import globals as g
 import open3d as o3d
 import supervisely_lib as sly
+from supervisely_lib.io.fs import remove_dir
 from open3d._ml3d.datasets.utils import BEVBox3D
 
 
@@ -46,33 +47,55 @@ def sort_kitti():
                      os.path.isfile(os.path.join(pcd_dir, pcd_path))]
 
         img_dir = os.path.join(g.sly_base_dir, ds, "related_images")
-        img_paths = [os.path.join(img_dir, img_path) for img_path in os.listdir(img_dir) if
-                     os.path.isdir(os.path.join(img_dir, img_path))]
+        img_paths = None
+        if os.path.isdir(img_dir):
+            img_paths = [os.path.join(img_dir, img_path) for img_path in os.listdir(img_dir) if
+                         os.path.isdir(os.path.join(img_dir, img_path))]
 
-        for ann_path, pcd_path, img_path in zip(sorted(ann_paths), sorted(pcd_paths), sorted(img_paths)):
+        for idx, (ann_path, pcd_path) in enumerate(zip(sorted(ann_paths), sorted(pcd_paths))):
             ann_json = sly.json.load_json_file(ann_path)
             ann = sly.PointcloudAnnotation.from_json(ann_json, meta)
             if len(ann.figures) > 0:
                 shutil.copy(ann_path, os.path.join(temp_train_ann_dir, os.path.basename(os.path.normpath(ann_path))))
                 shutil.copy(pcd_path, os.path.join(temp_train_pcd_dir, os.path.basename(os.path.normpath(pcd_path))))
-                shutil.copytree(img_path, os.path.join(temp_train_img_dir, os.path.basename(os.path.normpath(img_path))))
+                if img_paths is not None:
+                    shutil.copytree(img_paths[idx], os.path.join(temp_train_img_dir, os.path.basename(os.path.normpath(img_paths[idx]))))
             if len(ann.figures) == 0:
                 shutil.copy(ann_path, os.path.join(temp_test_ann_dir, os.path.basename(os.path.normpath(ann_path))))
                 shutil.copy(pcd_path, os.path.join(temp_test_pcd_dir, os.path.basename(os.path.normpath(pcd_path))))
-                shutil.copytree(img_path, os.path.join(temp_test_img_dir, os.path.basename(os.path.normpath(img_path))))
+                if img_paths is not None:
+                    shutil.copytree(img_paths[idx], os.path.join(temp_test_img_dir, os.path.basename(os.path.normpath(img_paths[idx]))))
 
     path_to_keyIdMap = os.path.join(g.sly_base_dir, "key_id_map.json")
     shutil.copy(path_to_meta, os.path.join(temp_proj_dir, "meta.json"))
     shutil.copy(path_to_keyIdMap, os.path.join(temp_proj_dir, "key_id_map.json"))
 
-    sly.fs.remove_dir(g.sly_base_dir)
+    remove_dir(g.sly_base_dir)
     os.rename(temp_dir, g.sly_base_dir)
+
+    train_ds = os.path.join(g.sly_base_dir, g.project_name, "training")
+    test_ds = os.path.join(g.sly_base_dir, g.project_name, "testing")
+    dataset_paths = [train_ds, test_ds]
+    check_dataset_files(dataset_paths)
+
+
+def check_dataset_files(dataset_paths):
+    for dataset_path in dataset_paths:
+        for subdir in os.listdir(dataset_path):
+            subdir = os.path.join(dataset_path, subdir)
+            dir_files_cnt = len([file for file in os.listdir(subdir) if os.path.isfile(os.path.join(subdir, file))])
+            subdir_dirs_cnt = len([dir for dir in os.listdir(subdir) if os.path.isdir(os.path.join(subdir, dir))])
+            if dir_files_cnt == 0 and subdir_dirs_cnt == 0:
+                remove_dir(subdir)
+        if len(os.listdir(dataset_path)) == 0:
+            remove_dir(dataset_path)
 
 
 def kitti_paths(path, ds_name, mode='write'):
     path = os.path.join(path, ds_name)
     bin_dir = os.path.join(path, 'velodyne')
     image_dir = os.path.join(path, 'image_2')
+    label_dir = None
     if ds_name == "training":
         label_dir = os.path.join(path, 'label_2')
     calib_dir = os.path.join(path, 'calib')
@@ -86,6 +109,7 @@ def kitti_paths(path, ds_name, mode='write'):
             os.mkdir(label_dir)
         os.mkdir(calib_dir)
 
+    paths = None
     if ds_name == "training":
         paths = [bin_dir, image_dir, label_dir, calib_dir]
     if ds_name == "testing":
@@ -98,6 +122,8 @@ def pcd_to_bin(pcd_path, bin_path):
     pcloud = o3d.io.read_point_cloud(pcd_path)
     points = np.asarray(pcloud.points, dtype=np.float32)
     intensity = np.asarray(pcloud.colors, dtype=np.float32)[:, 0:1]
+    if len(intensity) == 0:
+        intensity = np.ones((points.shape[0], 1))
     points = np.hstack((points, intensity)).flatten().astype("float32")
     points.tofile(bin_path)
 
@@ -187,10 +213,12 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
             calib_path = os.path.join(calib_dir, item_name_without_ext + '.txt')
             bin_path = os.path.join(bin_dir, item_name_without_ext + '.bin')
             image_path = os.path.join(image_dir, item_name_without_ext + '.png')
+            if not os.path.isdir(related_images_dir):
+                sly.logger.warn(f"{item_name} is missing photo context, can't generate calibration file, item will be skipped")
+                continue
 
             pcd_to_bin(item_path, bin_path)
-            related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]  # ONLY 1 Img
-
+            related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
             gen_calib_from_img_meta(img_meta, calib_path)
             if dataset_fs.name == "training":
                 annotation_to_kitti_label(ann_path, calib_path=calib_path, kiiti_label_path=label_path,
@@ -198,4 +226,4 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
             shutil.copy(src=related_img_path, dst=image_path)
             sly.logger.info(f"{item_name} converted to kitti .bin")
             progress.iter_done_report()
-    sly.logger.info(f"Dataset converted to kitti and stored at {kitti_dataset_path}")
+    sly.logger.info(f"Dataset has been converted to KITTI format and saved to Team Files: {kitti_dataset_path}")
