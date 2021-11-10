@@ -215,8 +215,8 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
                 sly.logger.warn(f"{item_name} is missing photo context, can't generate calibration file, item will be skipped")
                 continue
 
-            pcd_to_bin(item_path, bin_path)
             try:
+                pcd_to_bin(item_path, bin_path)
                 related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
                 gen_calib_from_img_meta(img_meta, calib_path)
             except:
