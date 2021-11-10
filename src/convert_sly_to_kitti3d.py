@@ -72,23 +72,29 @@ def sort_kitti():
 
     remove_dir(g.sly_base_dir)
     os.rename(temp_dir, g.sly_base_dir)
+    check_dataset_files(g.sly_base_dir, g.project_name)
 
-    train_ds = os.path.join(g.sly_base_dir, g.project_name, "training")
-    test_ds = os.path.join(g.sly_base_dir, g.project_name, "testing")
+
+def check_dataset_files(project_dir, project_name=None):
+    if project_name is not None:
+        train_ds = os.path.join(project_dir, project_name, "training")
+        test_ds = os.path.join(project_dir, project_name, "testing")
+    else:
+        train_ds = os.path.join(project_dir, "training")
+        test_ds = os.path.join(project_dir, "testing")
     dataset_paths = [train_ds, test_ds]
-    check_dataset_files(dataset_paths)
-
-
-def check_dataset_files(dataset_paths):
     for dataset_path in dataset_paths:
-        for subdir in os.listdir(dataset_path):
-            subdir = os.path.join(dataset_path, subdir)
-            dir_files_cnt = len([file for file in os.listdir(subdir) if os.path.isfile(os.path.join(subdir, file))])
-            subdir_dirs_cnt = len([dir for dir in os.listdir(subdir) if os.path.isdir(os.path.join(subdir, dir))])
-            if dir_files_cnt == 0 and subdir_dirs_cnt == 0:
-                remove_dir(subdir)
-        if len(os.listdir(dataset_path)) == 0:
-            remove_dir(dataset_path)
+        if os.path.isdir(dataset_path):
+            for subdir in os.listdir(dataset_path):
+                subdir = os.path.join(dataset_path, subdir)
+                dir_files_cnt = len([file for file in os.listdir(subdir) if os.path.isfile(os.path.join(subdir, file))])
+                subdir_dirs_cnt = len([dir for dir in os.listdir(subdir) if os.path.isdir(os.path.join(subdir, dir))])
+                if dir_files_cnt == 0 and subdir_dirs_cnt == 0:
+                    remove_dir(subdir)
+            if len(os.listdir(dataset_path)) == 0:
+                remove_dir(dataset_path)
+        else:
+            continue
 
 
 def kitti_paths(path, ds_name, mode='write'):
@@ -216,17 +222,20 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
                 continue
 
             try:
-                pcd_to_bin(item_path, bin_path)
                 related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
                 gen_calib_from_img_meta(img_meta, calib_path)
             except:
                 sly.logger.warn((f"Invalid photo context, {item_name} will be skipped"))
                 continue
 
+            pcd_to_bin(item_path, bin_path)
             if dataset_fs.name == "training":
                 annotation_to_kitti_label(ann_path, calib_path=calib_path, kiiti_label_path=label_path,
                                           meta=project_fs.meta)
             shutil.copy(src=related_img_path, dst=image_path)
             sly.logger.info(f"{item_name} converted to kitti .bin")
             progress.iter_done_report()
+    check_dataset_files(g.kitti_base_dir)
+    if len(os.listdir(g.kitti_base_dir)) == 0:
+        raise Exception("Nothing to convert")
     sly.logger.info(f"Dataset has been converted to KITTI format and saved to Team Files: {kitti_dataset_path}")
