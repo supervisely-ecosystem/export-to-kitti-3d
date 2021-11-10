@@ -219,8 +219,8 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
             try:
                 related_img_path, img_meta = dataset_fs.get_related_images(item_name)[0]
                 gen_calib_from_img_meta(img_meta, calib_path)
-            except Exception(f"Invalid photo context, {item_name} will be skipped") as e:
-                sly.logger.warn(e)
+            except:
+                sly.logger.warn((f"Invalid photo context, {item_name} will be skipped"))
                 continue
 
             if dataset_fs.name == "training":
