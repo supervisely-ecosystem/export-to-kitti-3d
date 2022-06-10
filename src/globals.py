@@ -1,8 +1,9 @@
 import os
-import supervisely_lib as sly
+import supervisely as sly
+from supervisely.app.v1.app_service import AppService
 
 
-my_app = sly.AppService()
+my_app = AppService()
 api: sly.Api = my_app.public_api
 
 task_id = my_app.task_id

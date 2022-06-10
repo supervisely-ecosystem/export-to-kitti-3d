@@ -3,8 +3,8 @@ import shutil
 import numpy as np
 import globals as g
 import open3d as o3d
-import supervisely_lib as sly
-from supervisely_lib.io.fs import remove_dir
+import supervisely as sly
+from supervisely.io.fs import remove_dir
 from open3d._ml3d.datasets.utils import BEVBox3D
 
 
