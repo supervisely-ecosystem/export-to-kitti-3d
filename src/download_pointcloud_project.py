@@ -1,8 +1,8 @@
 import os
 import shutil
 import globals as g
-import supervisely_lib as sly
-from supervisely_lib.project.pointcloud_project import download_pointcloud_project
+import supervisely as sly
+from supervisely.project.pointcloud_project import download_pointcloud_project
 
 
 def start(project_id, dest_dir):
