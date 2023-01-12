@@ -16,7 +16,8 @@ def export_kitti(api: sly.Api, task_id, context, state, app_logger):
     result_archive = os.path.join(g.storage_dir, archive_name)
     sly.fs.archive_directory(g.kitti_base_dir, result_archive)
     app_logger.info("Result directory is archived")
-    remote_archive_path = "/Export KITTI 3D/{}/{}".format(task_id, archive_name)
+    remote_archive_path = os.path.join(
+        sly.team_files.RECOMMENDED_EXPORT_PATH, "Export KITTI 3D/{}/{}".format(task_id, archive_name))
 
     upload_progress = []
     def _print_progress(monitor, upload_progress):
