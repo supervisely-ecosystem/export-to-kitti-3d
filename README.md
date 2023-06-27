@@ -27,14 +27,14 @@ App checks annotations for the given supervisely pointcloud project scenes and s
 
 **Step 2**: Open context menu of pointcloud project -> `Download via App` -> `Export to KITTI 3D` 
 
-<img src="https://i.imgur.com/2cPINcd.png" width="800px"/>
+<img src="media/htr.png" width="800px"/>
 
 ## How to use
 
 After running the application, you will be redirected to the `Tasks` page. Once application processing has finished, your link for downloading will be available. Click on the `file name` to download it.
 
-<img src="https://i.imgur.com/czaTszd.png"/>
+<img src="media/htu.png"/>
 
 **Note:** You can also find your converted project in `Team Files` -> `Export KITTI 3D` -> `<taskId>_<projectId>_<projectName>.tar`
 
-<img src="https://i.imgur.com/vSeLNzs.png"/>
+<img src="media/htua.png"/>
