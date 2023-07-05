@@ -12,7 +12,7 @@
   "task_location": "workspace_tasks",
   "isolate": true,
   "headless": true,
-  "icon": "https://i.imgur.com/lcNhMdI.png",
+  "icon": "https://github.com/supervisely-ecosystem/export-to-kitti-3d/assets/48245050/95e2b817-1f2b-459b-b684-75f0a1af8d5d",
   "icon_background": "#FFFFFF",
   "context_menu": {
     "target": [
