@@ -1,15 +1,19 @@
 import os
 import supervisely as sly
 from supervisely.app.v1.app_service import AppService
+from dotenv import load_dotenv
 
+if sly.is_development():
+    load_dotenv("debug.env")
+    load_dotenv(os.path.expanduser("~/supervisely.env"))
 
 my_app = AppService()
 api: sly.Api = my_app.public_api
 
 task_id = my_app.task_id
-team_id = int(os.environ['context.teamId'])
-workspace_id = int(os.environ['context.workspaceId'])
-project_id = int(os.environ['modal.state.slyProjectId'])
+team_id = int(os.environ["context.teamId"])
+workspace_id = int(os.environ["context.workspaceId"])
+project_id = int(os.environ["modal.state.slyProjectId"])
 project_name = api.project.get_info_by_id(project_id).name
 
 storage_dir = os.path.join(my_app.data_dir, "kitti_exporter")

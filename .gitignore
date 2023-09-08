@@ -2,3 +2,8 @@ secret_debug.env
 venv
 /src/debug
 .idea
+.venv
+test_file.py
+__pycache__
+/app_data
+/app_cache
