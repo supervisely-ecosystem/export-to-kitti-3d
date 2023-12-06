@@ -8,7 +8,7 @@ from supervisely.io.fs import remove_dir
 from open3d._ml3d.datasets.utils import BEVBox3D
 
 
-def sort_kitti():
+def sort_pointclouds_for_kitti():
     path_to_meta = os.path.join(g.sly_base_dir, "meta.json")
     meta_json = sly.json.load_json_file(path_to_meta)
     meta = sly.ProjectMeta.from_json(meta_json)
@@ -113,6 +113,101 @@ def sort_kitti():
     check_dataset_files(g.sly_base_dir, g.project_name)
 
 
+def sort_episodes_for_kitti():
+    path_to_meta = os.path.join(g.sly_base_dir, "meta.json")
+    meta_json = sly.json.load_json_file(path_to_meta)
+    meta = sly.ProjectMeta.from_json(meta_json)
+
+    temp_dir = os.path.join(g.storage_dir, "temp_dir")
+    temp_proj_dir = os.path.join(temp_dir, g.project_name)
+    temp_train_dir = os.path.join(temp_proj_dir, "training")
+    temp_test_dir = os.path.join(temp_proj_dir, "testing")
+    temp_train_ann_path = os.path.join(temp_train_dir, "annotation.json")
+    temp_test_ann_path = os.path.join(temp_test_dir, "annotation.json")
+    temp_train_pcd_dir = os.path.join(temp_train_dir, "pointcloud")
+    temp_test_pcd_dir = os.path.join(temp_test_dir, "pointcloud")
+    temp_train_img_dir = os.path.join(temp_train_dir, "related_images")
+    temp_test_img_dir = os.path.join(temp_test_dir, "related_images")
+
+    sly.fs.mkdir(temp_dir, remove_content_if_exists=True)
+    sly.fs.mkdir(temp_proj_dir)
+    sly.fs.mkdir(temp_train_dir)
+    sly.fs.mkdir(temp_test_dir)
+
+    sly.fs.mkdir(temp_train_pcd_dir)
+    sly.fs.mkdir(temp_test_pcd_dir)
+    sly.fs.mkdir(temp_train_img_dir)
+    sly.fs.mkdir(temp_test_img_dir)
+
+    datasets = [
+        ds for ds in os.listdir(g.sly_base_dir) if os.path.isdir(os.path.join(g.sly_base_dir, ds))
+    ]
+    for ds in datasets:
+        ann_path = os.path.join(g.sly_base_dir, ds, "annotation.json")
+        ann_json = sly.json.load_json_file(ann_path)
+        ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, meta)
+
+        frame_pcd_map_path = os.path.join(g.sly_base_dir, ds, "frame_pointcloud_map.json")
+        frame_pcd_map = sly.json.load_json_file(frame_pcd_map_path)
+        all_frames = list(map(int, frame_pcd_map.keys()))
+        train_frames = [frame.index for frame in ann.frames]
+        test_frames = [frame for frame in all_frames if frame not in train_frames]
+
+        img_dir = os.path.join(g.sly_base_dir, ds, "related_images")
+
+        train_frame_pcd_map = {}
+        frames = []
+        for idx, frame in enumerate(train_frames):
+            figures = ann.get_figures_on_frame(frame)
+            new_frame = sly.PointcloudEpisodeFrame(idx, figures)
+            frames.append(new_frame)
+
+            train_frame_pcd_map[idx] = frame_pcd_map[str(frame)]
+
+            pcd_name = frame_pcd_map[str(frame)]
+            pcd_path = os.path.join(g.sly_base_dir, ds, "pointcloud", pcd_name)
+            if not os.path.isfile(pcd_path):
+                continue
+            shutil.copy(pcd_path, os.path.join(temp_train_pcd_dir, pcd_name))
+
+            if os.path.isdir(img_dir):
+                related_img_dir_name = sly.fs.get_file_name(pcd_name) + "_pcd"
+                img_dirpath = os.path.join(img_dir, related_img_dir_name)
+                if os.path.isdir(img_dirpath):
+                    dest_imgdir = os.path.join(temp_train_img_dir, related_img_dir_name)
+                    shutil.copytree(img_dirpath, dest_imgdir)
+
+        test_frame_pcd_map = {}
+        for idx, frame in enumerate(test_frames):
+            test_frame_pcd_map[idx] = frame_pcd_map[str(frame)]
+            pcd_name = frame_pcd_map[str(frame)]
+            pcd_path = os.path.join(g.sly_base_dir, ds, "pointcloud", pcd_name)
+            if not os.path.isfile(pcd_path):
+                continue
+            shutil.copy(pcd_path, os.path.join(temp_test_pcd_dir, pcd_name))
+
+            if os.path.isdir(img_dir):
+                related_img_dir_name = sly.fs.get_file_name(pcd_name) + "_pcd"
+                img_dirpath = os.path.join(img_dir, related_img_dir_name)
+                if os.path.isdir(img_dirpath):
+                    dest_imgdir = os.path.join(temp_test_img_dir, related_img_dir_name)
+                    shutil.copytree(img_dirpath, dest_imgdir)
+
+        frames = sly.PointcloudEpisodeFrameCollection(frames)
+        train_ann = ann.clone(len(frames), frames=frames)
+        test_ann = ann.clone(len(test_frames), frames=sly.PointcloudEpisodeFrameCollection([]))
+
+        sly.json.dump_json_file(train_ann.to_json(), temp_train_ann_path)
+        sly.json.dump_json_file(test_ann.to_json(), temp_test_ann_path)
+    path_to_keyIdMap = os.path.join(g.sly_base_dir, "key_id_map.json")
+    shutil.copy(path_to_meta, os.path.join(temp_proj_dir, "meta.json"))
+    shutil.copy(path_to_keyIdMap, os.path.join(temp_proj_dir, "key_id_map.json"))
+
+    remove_dir(g.sly_base_dir)
+    os.rename(temp_dir, g.sly_base_dir)
+    check_dataset_files(g.sly_base_dir, g.project_name)
+
+
 def check_dataset_files(project_dir, project_name=None):
     if project_name is not None:
         train_ds = os.path.join(project_dir, project_name, "training")
@@ -180,14 +275,11 @@ def pcd_to_bin(pcd_path, bin_path):
     points.tofile(bin_path)
 
 
-def annotation_to_kitti_label(annotation_path, calib_path, kiiti_label_path, meta):
-    ann_json = sly.json.load_json_file(annotation_path)
+def annotation_to_kitti_label(figures, calib_path, kiiti_label_path):
     calib = o3d.ml.datasets.KITTI.read_calib(calib_path)
 
-    ann = sly.PointcloudAnnotation.from_json(ann_json, meta)
     objects = []
-
-    for fig in ann.figures:
+    for fig in figures:
         geometry = fig.geometry
         class_name = fig.parent_object.obj_class.name
 
@@ -248,10 +340,17 @@ def gen_calib_from_img_meta(img_meta, path):
     write_lines_to_txt(lines, path)
 
 
-def convert(project_dir, kitti_dataset_path, exclude_items=[]):
-    sort_kitti()
+def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
+    if episodes:
+        sort_episodes_for_kitti()
+    else:
+        sort_pointclouds_for_kitti()
     project_fs = sly.PointcloudProject.read_single(project_dir)
     for dataset_fs in project_fs:
+        if episodes:
+            dataset_fs: sly.PointcloudEpisodeDataset
+        else:
+            dataset_fs: sly.PointcloudDataset
         if dataset_fs.name == "training":
             bin_dir, image_dir, label_dir, calib_dir = kitti_paths(kitti_dataset_path, "training")
         if dataset_fs.name == "testing":
@@ -263,7 +362,10 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
                 sly.logger.info(f"{item_name} excluded")
                 continue
 
-            item_path, related_images_dir, ann_path = dataset_fs.get_item_paths(item_name)
+            if episodes:
+                item_path, related_images_dir, frame_index = dataset_fs.get_item_paths(item_name)
+            else:
+                item_path, related_images_dir, ann_path = dataset_fs.get_item_paths(item_name)
             item_name_without_ext = item_name.split(".")[0]
             if dataset_fs.name == "training":
                 label_path = os.path.join(label_dir, item_name_without_ext + ".txt")
@@ -285,11 +387,15 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[]):
 
             pcd_to_bin(item_path, bin_path)
             if dataset_fs.name == "training":
+                if episodes:
+                    ann = dataset_fs.get_ann(project_fs.meta)
+                    figures = ann.get_figures_on_frame(frame_index)
+                else:
+                    ann_json = sly.json.load_json_file(ann_path)
+                    ann = sly.PointcloudAnnotation.from_json(ann_json, project_fs.meta)
+                    figures = ann.figures
                 annotation_to_kitti_label(
-                    ann_path,
-                    calib_path=calib_path,
-                    kiiti_label_path=label_path,
-                    meta=project_fs.meta,
+                    figures, calib_path=calib_path, kiiti_label_path=label_path
                 )
             shutil.copy(src=related_img_path, dst=image_path)
             sly.logger.info(f"{item_name} converted to kitti .bin")

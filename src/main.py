@@ -10,8 +10,11 @@ from supervisely.io.fs import remove_dir
 @g.my_app.callback("export_kitti")
 @sly.timeit
 def export_kitti(api: sly.Api, task_id, context, state, app_logger):
-    download_pointcloud_project.start(g.project_id, g.sly_base_dir)
-    convert_sly_to_kitti3d.convert(g.sly_base_dir, g.kitti_base_dir, [])
+    project_info = api.project.get_info_by_id(g.project_id)
+    download_pointcloud_project.start(project_info, g.sly_base_dir)
+    is_episodes = project_info.type == str(sly.ProjectType.POINT_CLOUD_EPISODES)
+    convert_sly_to_kitti3d.convert(g.sly_base_dir, g.kitti_base_dir, [], is_episodes)
+
 
     archive_name = f"{g.project_id}_{g.project_name}.tar"
     result_archive = os.path.join(g.storage_dir, archive_name)
