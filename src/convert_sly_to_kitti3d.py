@@ -157,8 +157,9 @@ def sort_episodes_for_kitti():
             sly_frames = []
             for idx, frame in enumerate(frames):
                 figures = ann.get_figures_on_frame(frame)
-                new_frame = sly.PointcloudEpisodeFrame(idx, figures)
-                sly_frames.append(new_frame)
+                if isinstance(figures, list) and len(figures) > 0:
+                    new_frame = sly.PointcloudEpisodeFrame(idx, figures)
+                    sly_frames.append(new_frame)
 
                 frame2pcd[idx] = frame_pcd_map[str(frame)]
 
