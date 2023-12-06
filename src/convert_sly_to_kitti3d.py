@@ -199,6 +199,13 @@ def sort_episodes_for_kitti():
 
         sly.json.dump_json_file(train_ann.to_json(), temp_train_ann_path)
         sly.json.dump_json_file(test_ann.to_json(), temp_test_ann_path)
+
+        sly.json.dump_json_file(
+            train_frame_pcd_map, os.path.join(temp_train_dir, "frame_pointcloud_map.json")
+        )
+        sly.json.dump_json_file(
+            test_frame_pcd_map, os.path.join(temp_test_dir, "frame_pointcloud_map.json")
+        )
     path_to_keyIdMap = os.path.join(g.sly_base_dir, "key_id_map.json")
     shutil.copy(path_to_meta, os.path.join(temp_proj_dir, "meta.json"))
     shutil.copy(path_to_keyIdMap, os.path.join(temp_proj_dir, "key_id_map.json"))
