@@ -175,7 +175,11 @@ def sort_episodes_for_kitti():
                         dest_imgdir = os.path.join(img_dir, img_dir_name)
                         shutil.copytree(img_dirpath, dest_imgdir)
 
-            frames = sly.PointcloudEpisodeFrameCollection(sly_frames)
+            if len(sly_frames) > 0:
+                frames = sly.PointcloudEpisodeFrameCollection(sly_frames)
+            else:
+                frames = sly.PointcloudEpisodeFrameCollection()
+            ann: sly.PointcloudEpisodeAnnotation
             new_ann = ann.clone(len(frames), frames=frames)
 
             sly.json.dump_json_file(new_ann.to_json(), ann_path)
