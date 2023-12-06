@@ -345,9 +345,10 @@ def gen_calib_from_img_meta(img_meta, path):
 def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
     if episodes:
         sort_episodes_for_kitti()
+        project_fs = sly.PointcloudEpisodeProject.read_single(project_dir)
     else:
         sort_pointclouds_for_kitti()
-    project_fs = sly.PointcloudProject.read_single(project_dir)
+        project_fs = sly.PointcloudProject.read_single(project_dir)
     for dataset_fs in project_fs:
         if episodes:
             dataset_fs: sly.PointcloudEpisodeDataset
