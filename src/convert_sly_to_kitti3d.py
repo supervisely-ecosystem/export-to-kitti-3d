@@ -220,6 +220,8 @@ def check_dataset_files(project_dir, project_name=None):
         if os.path.isdir(dataset_path):
             for subdir in os.listdir(dataset_path):
                 subdir = os.path.join(dataset_path, subdir)
+                if not os.path.isdir(subdir):
+                    continue
                 dir_files_cnt = len(
                     [
                         file
