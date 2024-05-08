@@ -23,6 +23,6 @@ test_dir = os.path.join(kitti_base_dir, "testing")
 
 sly_base_dir = os.path.join(storage_dir, "supervisely")
 
-sly.fs.mkdir(sly_base_dir)#, remove_content_if_exists=True)
-sly.fs.mkdir(storage_dir)#, remove_content_if_exists=True)
-sly.fs.mkdir(kitti_base_dir)#, remove_content_if_exists=True)
+sly.fs.mkdir(sly_base_dir, remove_content_if_exists=True)
+sly.fs.mkdir(storage_dir, remove_content_if_exists=True)
+sly.fs.mkdir(kitti_base_dir, remove_content_if_exists=True)
