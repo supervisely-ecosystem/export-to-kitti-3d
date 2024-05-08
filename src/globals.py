@@ -4,7 +4,7 @@ from supervisely.app.v1.app_service import AppService
 from dotenv import load_dotenv
 
 if sly.is_development():
-    load_dotenv("debug.env")
+    load_dotenv("local.env")
     load_dotenv(os.path.expanduser("~/supervisely.env"))
 
 my_app = AppService()
@@ -23,6 +23,6 @@ test_dir = os.path.join(kitti_base_dir, "testing")
 
 sly_base_dir = os.path.join(storage_dir, "supervisely")
 
-sly.fs.mkdir(sly_base_dir, remove_content_if_exists=True)
-sly.fs.mkdir(storage_dir, remove_content_if_exists=True)
-sly.fs.mkdir(kitti_base_dir, remove_content_if_exists=True)
+sly.fs.mkdir(sly_base_dir)#, remove_content_if_exists=True)
+sly.fs.mkdir(storage_dir)#, remove_content_if_exists=True)
+sly.fs.mkdir(kitti_base_dir)#, remove_content_if_exists=True)
