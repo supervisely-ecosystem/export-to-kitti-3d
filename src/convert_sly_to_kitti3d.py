@@ -274,6 +274,11 @@ def annotation_to_kitti_label(figures, calib_path, kiiti_label_path):
     for fig in figures:
         geometry = fig.geometry
         class_name = fig.parent_object.obj_class.name
+        if geometry.geometry_name() != "cuboid_3d":
+            sly.logger.warn(
+                f"{class_name}: {geometry.geometry_name()} is not supported, skipping this figure"
+            )
+            continue
 
         dimensions = geometry.dimensions
         position = geometry.position
