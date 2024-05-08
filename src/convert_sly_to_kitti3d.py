@@ -403,6 +403,4 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
         raise Exception(
             "Photo context is necessary to create a calibration file for the KITTI format, all pointclouds without photo context were disregarded. Nothing to convert"
         )
-    sly.logger.info(
-        f"Dataset has been converted to KITTI format and saved to Team Files: {kitti_dataset_path}"
-    )
+    sly.logger.info("Dataset has been converted to KITTI format")
