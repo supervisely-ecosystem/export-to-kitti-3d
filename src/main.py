@@ -45,7 +45,7 @@ def export_kitti(api: sly.Api, task_id, context, state, app_logger):
         remote_archive_path,
         lambda m: _print_progress(m, upload_progress),
     )
-    app_logger.info("Uploaded to Team-Files: {!r}".format(file_info.storage_path))
+    app_logger.info(f"Uploaded to Team-Files: {file_info.path}")
     api.task.set_output_archive(
         task_id, file_info.id, archive_name, file_url=file_info.storage_path
     )
@@ -67,4 +67,4 @@ def main():
 
 
 if __name__ == "__main__":
-    sly.main_wrapper("main", main)
+    sly.main_wrapper("main", main, log_for_agent=False)

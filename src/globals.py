@@ -4,7 +4,7 @@ from supervisely.app.v1.app_service import AppService
 from dotenv import load_dotenv
 
 if sly.is_development():
-    load_dotenv("debug.env")
+    load_dotenv("local.env")
     load_dotenv(os.path.expanduser("~/supervisely.env"))
 
 my_app = AppService()
