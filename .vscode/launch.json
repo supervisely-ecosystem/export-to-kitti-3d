@@ -2,10 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: main.py",
-      "type": "python",
+      "name": "Current Python file",
+      "type": "debugpy",
       "request": "launch",
-      "program": "src/main.py",
+      "program": "${file}",
       "console": "integratedTerminal",
       "justMyCode": false,
       "env": {

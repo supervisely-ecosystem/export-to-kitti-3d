@@ -8,3 +8,4 @@ __pycache__
 /app_data
 /app_cache
 debug
+.DS_Store
