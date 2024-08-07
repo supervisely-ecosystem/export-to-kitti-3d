@@ -275,10 +275,12 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
     cuboid_objects = []
     pcd = o3d.io.read_point_cloud(pcd_path, format="pcd")
     pcd_points = np.asarray(pcd.points, dtype=np.uint32)
-    label_points = np.zeros(pcd_points.shape, dtype=np.uint32)
+    label_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
+    bin_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
     kiiti_bin_path = kiiti_label_path.replace(".txt", ".bin")
     kiiti_txt_path = kiiti_label_path
     kiiti_label_path = kiiti_label_path.replace(".txt", ".label")
+    has_pointcloud_labels = False
     for fig in figures:
         fig: sly.PointcloudFigure
         geometry = fig.geometry
@@ -300,9 +302,6 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
 
             cuboid_objects.append(obj.to_kitti_format(obj.confidence))
         elif geometry.geometry_name() == "point_cloud" and g.SAVE_LABELS:
-            pointcloud = o3d.geometry.PointCloud()
-            pointcloud.points = o3d.utility.Vector3dVector(pcd_points[geometry.indices])
-
             # Get Class ID for this figure (will be used as lower 16 bits of label)
             cls_name = fig.parent_object.obj_class.name
             cls_id = cls_map.get(cls_name)
@@ -320,6 +319,8 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
             # The label is a 32-bit unsigned integer (aka uint32_t) for each point, where the lower 16 bits correspond to the label. The upper 16 bits encode the instance id:
             label = (instance_id << 16) | (cls_id & 0xFFFF)
             label_points[geometry.indices] = label
+            bin_points[geometry.indices] = label
+            has_pointcloud_labels = True
 
     # Write cuboid objects to .txt file
     with open(kiiti_txt_path, "w") as f:
@@ -329,11 +330,11 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
     if g.SAVE_LABELS:
         # # Write lines to .label file
         with open(kiiti_label_path, "wb") as f:
-            label_points.flatten().astype("uint32").tofile(f)
+            label_points.tofile(f)
 
         # # Write label points to .bin file
         with open(kiiti_bin_path, "wb") as f:
-            label_points.flatten().astype("uint32").tofile(f)
+            label_points.tofile(f)
 
 
 def mkline(arr):
@@ -373,14 +374,14 @@ def gen_calib_from_img_meta(img_meta, path):
 
 def get_cls_map(meta: sly.ProjectMeta):
     cls_map = {}
-    for idx, obj_class in enumerate(meta.obj_classes):
+    for idx, obj_class in enumerate(meta.obj_classes, 1):
         cls_map[obj_class.name] = idx
     return cls_map
 
 
 def get_obj_map(annotation: Union[sly.PointcloudAnnotation, sly.PointcloudEpisodeAnnotation]):
     obj_map = {}
-    for idx, obj in enumerate(annotation.objects):
+    for idx, obj in enumerate(annotation.objects, 1):
         obj_map[obj.key()] = idx
     return obj_map
 
