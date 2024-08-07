@@ -1,4 +1,6 @@
 import os
+
+from typing import Union
 import shutil
 import numpy as np
 import globals as g
@@ -267,39 +269,71 @@ def pcd_to_bin(pcd_path, bin_path):
     points.tofile(bin_path)
 
 
-def annotation_to_kitti_label(figures, calib_path, kiiti_label_path):
+def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, cls_map, obj_map):
     calib = o3d.ml.datasets.KITTI.read_calib(calib_path)
 
-    objects = []
+    cuboid_objects = []
+    pcd = o3d.io.read_point_cloud(pcd_path, format="pcd")
+    pcd_points = np.asarray(pcd.points, dtype=np.uint32)
+    label_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
+    bin_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
+    # kiiti_bin_path = kiiti_label_path.replace(".txt", ".bin")
+    kiiti_txt_path = kiiti_label_path
+    kiiti_label_path = kiiti_label_path.replace(".txt", ".label")
     for fig in figures:
+        fig: sly.PointcloudFigure
         geometry = fig.geometry
         class_name = fig.parent_object.obj_class.name
-        if geometry.geometry_name() != "cuboid_3d":
-            sly.logger.warn(
-                f"{class_name}: {geometry.geometry_name()} is not supported, skipping this figure"
+        if geometry.geometry_name() == "cuboid_3d":
+            dimensions = geometry.dimensions
+            position = geometry.position
+            rotation = geometry.rotation
+
+            obj = BEVBox3D(
+                center=np.array([float(position.x), float(position.y), float(position.z)]),
+                size=np.array([float(dimensions.x), float(dimensions.z), float(dimensions.y)]),
+                yaw=np.array(float(-rotation.z)),
+                label_class=class_name,
+                confidence=1.0,
+                world_cam=calib["world_cam"],
+                cam_img=calib["cam_img"],
             )
-            continue
 
-        dimensions = geometry.dimensions
-        position = geometry.position
-        rotation = geometry.rotation
+            cuboid_objects.append(obj.to_kitti_format(obj.confidence))
+        elif geometry.geometry_name() == "point_cloud" and g.SAVE_LABELS:
+            # Get Class ID for this figure (will be used as lower 16 bits of label)
+            cls_name = fig.parent_object.obj_class.name
+            cls_id = cls_map.get(cls_name)
+            if cls_id is None:
+                sly.logger.warn(f"Class id not found for {cls_name}, skipping this figure")
+                continue
 
-        obj = BEVBox3D(
-            center=np.array([float(position.x), float(position.y), float(position.z)]),
-            size=np.array([float(dimensions.x), float(dimensions.z), float(dimensions.y)]),
-            yaw=np.array(float(-rotation.z)),
-            label_class=class_name,
-            confidence=1.0,
-            world_cam=calib["world_cam"],
-            cam_img=calib["cam_img"],
-        )
+            # Get Instance ID for this figure (will be used as upper 16 bits of label)
+            instance_key = fig.parent_object.key()
+            instance_id = obj_map.get(instance_key)
+            if instance_id is None:
+                sly.logger.warn(f"Instance id not found for {cls_name}, skipping this figure")
+                continue
 
-        objects.append(obj)
+            # The label is a 32-bit unsigned integer (aka uint32_t) for each point, where the lower 16 bits correspond to the label. The upper 16 bits encode the instance id:
+            label = (instance_id << 16) | (cls_id & 0xFFFF)
+            label_points[geometry.indices] = label
+            bin_points[geometry.indices] = label
+            has_pointcloud_labels = True
 
-    with open(kiiti_label_path, "w") as f:
-        for box in objects:
-            f.write(box.to_kitti_format(box.confidence))
-            f.write("\n")
+    # Write cuboid objects to .txt file
+    with open(kiiti_txt_path, "w") as f:
+        for obj in cuboid_objects:
+            f.write(obj + "\n")
+
+    if g.SAVE_LABELS:
+        # # Write lines to .label file
+        with open(kiiti_label_path, "wb") as f:
+            label_points.tofile(f)
+
+        # # # Write label points to .bin file
+        # with open(kiiti_bin_path, "wb") as f:
+        #     label_points.tofile(f)
 
 
 def mkline(arr):
@@ -337,6 +371,20 @@ def gen_calib_from_img_meta(img_meta, path):
     write_lines_to_txt(lines, path)
 
 
+def get_cls_map(meta: sly.ProjectMeta):
+    cls_map = {}
+    for idx, obj_class in enumerate(meta.obj_classes, 1):
+        cls_map[obj_class.name] = idx
+    return cls_map
+
+
+def get_obj_map(annotation: Union[sly.PointcloudAnnotation, sly.PointcloudEpisodeAnnotation]):
+    obj_map = {}
+    for idx, obj in enumerate(annotation.objects, 1):
+        obj_map[obj.key()] = idx
+    return obj_map
+
+
 def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
     if episodes:
         sort_episodes_for_kitti()
@@ -344,9 +392,13 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
     else:
         sort_pointclouds_for_kitti()
         project_fs = sly.PointcloudProject.read_single(project_dir)
+
+    cls_map = get_cls_map(project_fs.meta)
     for dataset_fs in project_fs:
         if episodes:
             dataset_fs: sly.PointcloudEpisodeDataset
+            ann = dataset_fs.get_ann(project_fs.meta)
+            obj_map = get_obj_map(ann)
         else:
             dataset_fs: sly.PointcloudDataset
         if dataset_fs.name == "training":
@@ -391,9 +443,15 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
                 else:
                     ann_json = sly.json.load_json_file(ann_path)
                     ann = sly.PointcloudAnnotation.from_json(ann_json, project_fs.meta)
+                    obj_map = get_obj_map(ann)
                     figures = ann.figures
                 annotation_to_kitti_label(
-                    figures, calib_path=calib_path, kiiti_label_path=label_path
+                    item_path,
+                    figures,
+                    calib_path=calib_path,
+                    kiiti_label_path=label_path,
+                    cls_map=cls_map,
+                    obj_map=obj_map,
                 )
             shutil.copy(src=related_img_path, dst=image_path)
             sly.logger.info(f"{item_name} converted to kitti .bin")
