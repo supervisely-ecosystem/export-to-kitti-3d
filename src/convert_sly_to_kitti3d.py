@@ -277,10 +277,9 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
     pcd_points = np.asarray(pcd.points, dtype=np.uint32)
     label_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
     bin_points = np.zeros(pcd_points.shape, dtype=np.uint32).flatten()
-    kiiti_bin_path = kiiti_label_path.replace(".txt", ".bin")
+    # kiiti_bin_path = kiiti_label_path.replace(".txt", ".bin")
     kiiti_txt_path = kiiti_label_path
     kiiti_label_path = kiiti_label_path.replace(".txt", ".label")
-    has_pointcloud_labels = False
     for fig in figures:
         fig: sly.PointcloudFigure
         geometry = fig.geometry
@@ -332,9 +331,9 @@ def annotation_to_kitti_label(pcd_path, figures, calib_path, kiiti_label_path, c
         with open(kiiti_label_path, "wb") as f:
             label_points.tofile(f)
 
-        # # Write label points to .bin file
-        with open(kiiti_bin_path, "wb") as f:
-            label_points.tofile(f)
+        # # # Write label points to .bin file
+        # with open(kiiti_bin_path, "wb") as f:
+        #     label_points.tofile(f)
 
 
 def mkline(arr):
