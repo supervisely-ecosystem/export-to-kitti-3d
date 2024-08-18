@@ -1,5 +1,6 @@
 import os
 import globals as g
+import workflow as w
 import supervisely as sly
 
 import download_pointcloud_project
@@ -11,9 +12,9 @@ from supervisely.io.fs import remove_dir
 @sly.timeit
 def export_kitti(api: sly.Api, task_id, context, state, app_logger):
     download_pointcloud_project.start(g.project_info, g.sly_base_dir)
+    w.workflow_input(api, g.project_info.id)
     is_episodes = g.project_info.type == str(sly.ProjectType.POINT_CLOUD_EPISODES)
     convert_sly_to_kitti3d.convert(g.sly_base_dir, g.kitti_base_dir, [], is_episodes)
-
 
     archive_name = f"{g.project_id}_{g.project_name}.tar"
     result_archive = os.path.join(g.storage_dir, archive_name)
@@ -48,6 +49,7 @@ def export_kitti(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_output_archive(
         task_id, file_info.id, archive_name, file_url=file_info.storage_path
     )
+    w.workflow_output(api, file_info)
     remove_dir(g.storage_dir)
     g.my_app.stop()
 
