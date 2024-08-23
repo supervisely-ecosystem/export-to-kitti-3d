@@ -10,6 +10,36 @@ from supervisely.io.fs import remove_dir
 from open3d._ml3d.datasets.utils import BEVBox3D
 
 
+def create_temp_dirs_episodes_multi_ds(idx):
+    temp_dir = os.path.join(g.storage_dir, "temp_dir")
+    proj_dir = os.path.join(temp_dir, g.project_name)
+
+    train_dir = os.path.join(proj_dir, f"training_{idx}")
+    test_dir = os.path.join(proj_dir, f"testing_{idx}")
+    train_ann = os.path.join(train_dir, "annotation.json")
+    test_ann = os.path.join(test_dir, "annotation.json")
+    train_ann_dir = None
+    test_ann_dir = None
+
+    train_pcd_dir = os.path.join(train_dir, "pointcloud")
+    test_pcd_dir = os.path.join(test_dir, "pointcloud")
+    train_img_dir = os.path.join(train_dir, "related_images")
+    test_img_dir = os.path.join(test_dir, "related_images")
+
+    sly.fs.mkdir(temp_dir, remove_content_if_exists=False)
+    sly.fs.mkdir(proj_dir)
+    sly.fs.mkdir(train_dir)
+    sly.fs.mkdir(test_dir)
+
+    sly.fs.mkdir(train_pcd_dir)
+    sly.fs.mkdir(test_pcd_dir)
+    sly.fs.mkdir(train_img_dir)
+    sly.fs.mkdir(test_img_dir)
+    train_paths = [train_dir, train_pcd_dir, train_img_dir, train_ann_dir, train_ann]
+    test_paths = [test_dir, test_pcd_dir, test_img_dir, test_ann_dir, test_ann]
+    return temp_dir, proj_dir, train_paths, test_paths
+
+
 def create_temp_dirs(episodes=False):
     temp_dir = os.path.join(g.storage_dir, "temp_dir")
     proj_dir = os.path.join(temp_dir, g.project_name)
@@ -134,14 +164,19 @@ def sort_episodes_for_kitti():
     meta_json = sly.json.load_json_file(path_to_meta)
     meta = sly.ProjectMeta.from_json(meta_json)
 
-    temp_dir, proj_dir, train_paths, test_paths = create_temp_dirs(episodes=True)
-    train_dir, train_pcd_dir, train_img_dir, _, train_ann = train_paths
-    test_dir, test_pcd_dir, test_img_dir, _, test_ann = test_paths
-
     datasets = [
         ds for ds in os.listdir(g.sly_base_dir) if os.path.isdir(os.path.join(g.sly_base_dir, ds))
     ]
-    for ds in datasets:
+
+    for idx, ds in enumerate(datasets, 1):
+        if len(datasets) > 1:
+            temp_dir, proj_dir, train_paths, test_paths = create_temp_dirs_episodes_multi_ds(idx)
+        else:
+            temp_dir, proj_dir, train_paths, test_paths = create_temp_dirs(episodes=True)
+
+        train_dir, train_pcd_dir, train_img_dir, _, train_ann = train_paths
+        test_dir, test_pcd_dir, test_img_dir, _, test_ann = test_paths
+
         ann_path = os.path.join(g.sly_base_dir, ds, "annotation.json")
         ann_json = sly.json.load_json_file(ann_path)
         ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, meta)
@@ -237,7 +272,7 @@ def kitti_paths(path, ds_name, mode="write"):
     bin_dir = os.path.join(path, "velodyne")
     image_dir = os.path.join(path, "image_2")
     label_dir = None
-    if ds_name == "training":
+    if "training" in ds_name:
         label_dir = os.path.join(path, "label_2")
     calib_dir = os.path.join(path, "calib")
 
@@ -246,14 +281,14 @@ def kitti_paths(path, ds_name, mode="write"):
         os.mkdir(path)
         os.mkdir(bin_dir)
         os.mkdir(image_dir)
-        if ds_name == "training":
+        if "training" in ds_name:
             os.mkdir(label_dir)
         os.mkdir(calib_dir)
 
     paths = None
-    if ds_name == "training":
+    if "training" in ds_name:
         paths = [bin_dir, image_dir, label_dir, calib_dir]
-    if ds_name == "testing":
+    if "testing" in ds_name:
         paths = [bin_dir, image_dir, calib_dir]
     assert all([os.path.exists(x) for x in paths])
     return paths
@@ -401,10 +436,12 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
             obj_map = get_obj_map(ann)
         else:
             dataset_fs: sly.PointcloudDataset
-        if dataset_fs.name == "training":
-            bin_dir, image_dir, label_dir, calib_dir = kitti_paths(kitti_dataset_path, "training")
-        if dataset_fs.name == "testing":
-            bin_dir, image_dir, calib_dir = kitti_paths(kitti_dataset_path, "testing")
+        if "training" in dataset_fs.name:
+            bin_dir, image_dir, label_dir, calib_dir = kitti_paths(
+                kitti_dataset_path, dataset_fs.name
+            )
+        if "testing" in dataset_fs.name:
+            bin_dir, image_dir, calib_dir = kitti_paths(kitti_dataset_path, dataset_fs.name)
 
         progress = sly.Progress(f"Converting dataset: '{dataset_fs.name}'", len(dataset_fs))
         for item_name in dataset_fs:
@@ -417,7 +454,7 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
             else:
                 item_path, related_images_dir, ann_path = dataset_fs.get_item_paths(item_name)
             item_name_without_ext = item_name.split(".")[0]
-            if dataset_fs.name == "training":
+            if "training" in dataset_fs.name:
                 label_path = os.path.join(label_dir, item_name_without_ext + ".txt")
             calib_path = os.path.join(calib_dir, item_name_without_ext + ".txt")
             bin_path = os.path.join(bin_dir, item_name_without_ext + ".bin")
@@ -436,7 +473,7 @@ def convert(project_dir, kitti_dataset_path, exclude_items=[], episodes=False):
                 continue
 
             pcd_to_bin(item_path, bin_path)
-            if dataset_fs.name == "training":
+            if "training" in dataset_fs.name:
                 if episodes:
                     ann = dataset_fs.get_ann(project_fs.meta)
                     figures = ann.get_figures_on_frame(frame_index)
