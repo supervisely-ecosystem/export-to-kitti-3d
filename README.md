@@ -9,7 +9,7 @@
   <a href="#How-To-Use">How To Use</a>
 </p>
   
-[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](../../../../supervisely-ecosystem/export-to-kitti-3d)
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervisely.com/apps/supervisely-ecosystem/export-to-kitti-3d)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervisely.com/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/export-to-kitti-3d)
 [![views](https://app.supervisely.com/img/badges/views/supervisely-ecosystem/export-to-kitti-3d.png)](https://supervisely.com)
@@ -23,7 +23,7 @@ Converts [Supervisely](https://docs.supervisely.com/data-organization/00_ann_for
 App checks annotations for the given supervisely pointcloud project scenes and sort all scenes within the project to `training` and `testing`. All project scenes with figures will be placed to `training`, and all scenes without figures will be placed to `testing`. Scenes without `photo context` **will be ignored**.
 
 ## How To Run 
-**Step 1**: Add app to your team from [Ecosystem](../../../../supervisely-ecosystem/export-to-kitti-3d) if it is not there.
+**Step 1**: Add app to your team from [Ecosystem](https://ecosystem.supervisely.com/apps/export-to-kitti-3d) if it is not there.
 
 **Step 2**: Open context menu of pointcloud project -> `Download via App` -> `Export to KITTI 3D` 
 
