@@ -20,12 +20,12 @@
 ## Overview
 Converts [Supervisely](https://docs.supervisely.com/data-organization/00_ann_format_navi) format to [KITTI 3D](http://www.cvlibs.net/datasets/kitti/) and creates a downloadable link in the current `Workspace` -> `Tasks` page. Backward compatible with [`Import KITTI 3D`](https://github.com/supervisely-ecosystem/import-kitti-3d) app.
 
-App checks annotations for the given supervisely pointcloud project scenes and sort all scenes within the project to `training` and `testing`. All project scenes with figures will be placed to `training`, and all scenes without figures will be placed to `testing`. Scenes without `photo context` **will be ignored**.
+App checks annotations for the given supervisely point cloud project scenes and sort all scenes within the project to `training` and `testing`. All project scenes with figures will be placed to `training`, and all scenes without figures will be placed to `testing`. Scenes without `photo context` **will be ignored**.
 
 ## How To Run 
 **Step 1**: Add app to your team from [Ecosystem](https://ecosystem.supervisely.com/apps/export-to-kitti-3d) if it is not there.
 
-**Step 2**: Open context menu of pointcloud project -> `Download via App` -> `Export to KITTI 3D` 
+**Step 2**: Open context menu of point cloud project -> `Download via App` -> `Export to KITTI 3D` 
 
 <img src="https://i.imgur.com/2cPINcd.png" width="800px"/>
 
