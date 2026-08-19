@@ -3,7 +3,7 @@
   "type": "app",
   "categories": ["pointclouds", "export", "episodes"],
   "description": "Converts Supervisely Point Cloud format to KITTI 3D",
-  "docker_image": "supervisely/import-export:6.73.577",
+  "docker_image": "supervisely/export-to-kitti-3d:1.0.0",
   "instance_version": "6.16.19",
   "main_script": "src/main.py",
   "task_location": "workspace_tasks",
